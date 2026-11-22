@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>evalgate · live demo</title>
+<meta name="description" content="evalgate: regression tests and a CI gate for LLM prompts. Live demo reports.">
+<style>
+:root{--bg:#F6F5F1;--card:#fff;--ink:#16161A;--mute:#6B6A72;--line:#E4E2DC;--ok:#147A4B;--okbg:#E3F3EA;--bad:#B4232F;--badbg:#FBE6E7;--acc:#4B3FD9;--code:#F1EFE9}
+@media (prefers-color-scheme:dark){:root{--bg:#0F0F12;--card:#17171C;--ink:#ECEBF0;--mute:#9A98A6;--line:#2A2A33;--ok:#4FD18B;--okbg:#14301F;--bad:#FF6B76;--badbg:#3A1519;--acc:#8F86FF;--code:#1F1F26}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:56px 16px 72px}
+.eyebrow{font:600 12px ui-monospace,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+h1{font-size:clamp(34px,6vw,54px);line-height:1.05;letter-spacing:-.03em;margin:10px 0 16px}
+.lead{font-size:18px;color:var(--mute);max-width:640px;margin:0}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0 44px}
+.cta a{padding:11px 18px;border-radius:999px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--ink);background:var(--card)}
+.cta a.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+h2{font-size:20px;letter-spacing:-.01em;margin:40px 0 14px}
+.story{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.step b{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+.step strong{font-size:30px;letter-spacing:-.02em}
+.step p{margin:8px 0 0;font-size:13.5px;color:var(--mute)}
+.reports{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.report{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;transition:transform .15s,border-color .15s}
+.report:hover{transform:translateY(-2px);border-color:var(--acc)}
+.pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+.pill.fail{background:var(--badbg);color:var(--bad)}.pill.pass{background:var(--okbg);color:var(--ok)}
+.report h3{margin:12px 0 6px;font-size:17px}.report p{margin:0;color:var(--mute);font-size:14px}
+pre{background:var(--code);border-radius:12px;padding:16px;overflow:auto;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.note{font-size:13px;color:var(--mute);border-left:3px solid var(--line);padding-left:12px}
+footer{margin-top:48px;font-size:13px;color:var(--mute)}footer a{color:var(--acc)}
+@media (max-width:720px){.story,.reports{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="eyebrow">evalgate · live demo</div>
+  <h1>Unit tests for prompts.<br>A gate for your CI.</h1>
+  <p class="lead">Write eval cases in YAML, grade replies with cheap rules plus an LLM judge, compare two prompt versions with paired statistics, and fail the pull request when quality or policy regresses.</p>
+  <div class="cta"><a class="primary" href="v1-vs-v2.html">See a blocked PR →</a><a href="https://github.com/affifariza04/evalgate">Source on GitHub</a></div>
+
+  <h2>The story in this demo</h2>
+  <div class="story">
+    <div class="step"><b>v1 · baseline</b><strong>9 / 12</strong><p>Correct on policy, but wordy, answers Indonesian customers in English and is vague on grind size.</p></div>
+    <div class="step"><b>v2 · "be warm and generous"</b><strong>9 / 12</strong><p>Same headline score, yet it now promises refunds on opened bags and invents a discount code. <b>The gate blocks it.</b></p></div>
+    <div class="step"><b>v3 · firm policies, same tone</b><strong>12 / 12</strong><p>Keeps v2's fixes, restores the policy guardrails. Gate passes.</p></div>
+  </div>
+  <p class="note">An average pass rate would have called v1 → v2 a tie. Per-case pairing and critical checks are what catch it.</p>
+
+  <h2>Reports</h2>
+  <div class="reports">
+    <a class="report" href="v1-vs-v2.html"><span class="pill fail">GATE FAIL</span><h3>v1 → v2</h3><p>3 fixed, 3 regressed, 2 of them critical policy breaks. Side-by-side replies show exactly what changed.</p></a>
+    <a class="report" href="v2-vs-v3.html"><span class="pill pass">GATE PASS</span><h3>v2 → v3</h3><p>3 fixed, 0 regressed, 12/12 passing.</p></a>
+  </div>
+
+  <h2>In CI</h2>
+<pre>- run: uv run evalgate run evals/suite.yaml -o candidate.json
+- run: uv run evalgate compare evals/suite.yaml baseline.json candidate.json --html report.html
+  # exit code 1 blocks the merge; a Markdown summary lands in the job summary</pre>
+  <p class="note">The replies in this demo are hand-written fixtures replayed from a cassette, so the page and CI need no API key. Pointing the suite at Claude with <code>--record</code> runs the same checks on real completions.</p>
+
+  <footer>Built by <a href="https://affifariza04.github.io/portfolio/">Affif Ariza Adiwijaya</a> · MIT</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>evalgate · {{ cmp.cand.suite }}</title>
+<style>
+:root{--bg:#F6F5F1;--card:#FFFFFF;--ink:#16161A;--mute:#6B6A72;--line:#E4E2DC;--ok:#147A4B;--okbg:#E3F3EA;--bad:#B4232F;--badbg:#FBE6E7;--acc:#4B3FD9;--code:#F1EFE9}
+@media (prefers-color-scheme:dark){:root{--bg:#0F0F12;--card:#17171C;--ink:#ECEBF0;--mute:#9A98A6;--line:#2A2A33;--ok:#4FD18B;--okbg:#14301F;--bad:#FF6B76;--badbg:#3A1519;--acc:#8F86FF;--code:#1F1F26}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 16px 64px}
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0}h1 small{display:block;font-size:13px;color:var(--mute);font-weight:500;letter-spacing:0;margin-top:4px}
+.verdict{font-weight:800;font-size:15px;padding:10px 18px;border-radius:999px;letter-spacing:.04em}
+.verdict.pass{background:var(--okbg);color:var(--ok)}.verdict.fail{background:var(--badbg);color:var(--bad)}
+.reasons{margin:0 0 24px;padding:14px 18px;border-radius:12px;background:var(--badbg);color:var(--bad)}
+.reasons ul{margin:6px 0 0 18px;padding:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kpi span{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--mute)}
+.kpi b{display:block;font-size:26px;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi em{font-style:normal;font-size:12px;color:var(--mute)}
+.up{color:var(--ok)}.down{color:var(--bad)}
+h2{font-size:16px;margin:32px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mute);font-weight:600}
+tr:last-child td{border-bottom:0}
+.bar{height:8px;border-radius:4px;background:var(--line);position:relative;min-width:120px}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--acc)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.bad{background:var(--badbg);color:var(--bad)}.pill.mute{background:var(--code);color:var(--mute)}
+.flip{border-top:1px solid var(--line);padding:18px}.flip:first-child{border-top:0}
+.flip h3{margin:0 0 4px;font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.flip .q{color:var(--mute);margin-bottom:12px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.out{background:var(--code);border-radius:10px;padding:12px;white-space:pre-wrap;font:12.5px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+.out small{display:block;font:600 10px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.why{margin-top:10px;font-size:13px;color:var(--bad)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:600 12px Inter,sans-serif;cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+details summary{cursor:pointer;list-style:none}details summary::-webkit-details-marker{display:none}
+.checks{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px}.checks li{margin:2px 0}
+footer{margin-top:40px;color:var(--mute);font-size:12px}
+footer a{color:var(--acc)}
+@media (max-width:720px){.cols{grid-template-columns:1fr}th:nth-child(3),td:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>{{ cmp.cand.suite }}<small>{{ cmp.base.label }} → {{ cmp.cand.label }} · {{ cmp.cand.model }} · {{ c.n }} cases</small></h1>
+  <div class="verdict {{ cmp.verdict }}">GATE {{ cmp.verdict | upper }}</div>
+</header>
+
+{% if cmp.reasons %}<div class="reasons"><b>Why the gate failed</b><ul>{% for r in cmp.reasons %}<li>{{ r }}</li>{% endfor %}</ul></div>{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><span>Pass rate</span><b>{{ c.pass_rate | pct }}</b><em>was {{ b.pass_rate | pct }} · 95% CI {{ c.ci95[0] | pct }}–{{ c.ci95[1] | pct }}</em></div>
+  <div class="kpi"><span>Regressed</span><b class="{{ 'down' if cmp.regressions else '' }}">{{ cmp.regressions | length }}</b><em>pass → fail</em></div>
+  <div class="kpi"><span>Fixed</span><b class="{{ 'up' if cmp.fixes else '' }}">{{ cmp.fixes | length }}</b><em>fail → pass</em></div>
+  <div class="kpi"><span>McNemar p</span><b>{{ '%.3f' | format(cmp.p_value) }}</b><em>paired, exact</em></div>
+  <div class="kpi"><span>Cost / run</span><b>${{ '%.4f' | format(c.cost_usd) }}</b><em>was ${{ '%.4f' | format(b.cost_usd) }}</em></div>
+  <div class="kpi"><span>p95 latency</span><b>{{ '%.0f' | format(c.p95_ms) }} ms</b><em>was {{ '%.0f' | format(b.p95_ms) }} ms</em></div>
+</div>
+
+<h2>By tag</h2>
+<div class="card"><table>
+<tr><th>Tag</th><th>Baseline</th><th>Candidate</th><th style="width:40%">Candidate pass rate</th></tr>
+{% for t in tags %}{% set bt = b.by_tag.get(t, {'passed':0,'n':0}) %}{% set ct = c.by_tag.get(t, {'passed':0,'n':0}) %}
+<tr><td><b>{{ t }}</b></td><td>{{ bt.passed }}/{{ bt.n }}</td><td>{{ ct.passed }}/{{ ct.n }}
+ {% if ct.passed < bt.passed %}<span class="pill bad">▼ {{ bt.passed - ct.passed }}</span>{% elif ct.passed > bt.passed %}<span class="pill ok">▲ {{ ct.passed - bt.passed }}</span>{% endif %}</td>
+ <td><div class="bar"><i style="width:{{ (100 * ct.passed / ct.n) if ct.n else 0 }}%"></i></div></td></tr>
+{% endfor %}
+</table></div>
+
+{% if cmp.flips %}
+<h2>What changed</h2>
+<div class="card">
+{% for f in cmp.regressions + cmp.fixes %}
+<div class="flip">
+  <h3><code>{{ f.id }}</code>
+   {% if f.kind == 'regression' %}<span class="pill bad">regressed</span>{% else %}<span class="pill ok">fixed</span>{% endif %}
+   {% if f.critical %}<span class="pill bad">critical</span>{% endif %}
+   {% for t in f.cand.tags %}<span class="pill mute">{{ t }}</span>{% endfor %}</h3>
+  <div class="q">“{{ f.cand.input }}”</div>
+  <div class="cols">
+    <div class="out"><small>{{ cmp.base.label }}</small>{{ f.base.output }}</div>
+    <div class="out"><small>{{ cmp.cand.label }}</small>{{ f.cand.output }}</div>
+  </div>
+  {% if f.failed_checks %}<div class="why">✗ {{ f.failed_checks | join(' · ') }}</div>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<h2>All cases</h2>
+<div class="filters" role="group" aria-label="Filter cases">
+  <button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="fail">Failing</button><button aria-pressed="false" data-f="flip">Changed</button>
+</div>
+<div class="card"><table id="cases">
+<tr><th>Case</th><th>Result</th><th>Checks</th></tr>
+{% for base, case in rows %}{% set flipped = base and base.passed != case.passed %}
+<tr data-pass="{{ 1 if case.passed else 0 }}" data-flip="{{ 1 if flipped else 0 }}">
+ <td><details><summary><code>{{ case.id }}</code> {% for t in case.tags %}<span class="pill mute">{{ t }}</span> {% endfor %}</summary>
+  <div class="q" style="margin-top:8px">“{{ case.input }}”</div><div class="out">{{ case.output or case.error }}</div></details></td>
+ <td>{% if case.passed %}<span class="pill ok">pass</span>{% else %}<span class="pill bad">fail</span>{% endif %}
+     {% if base %}<span class="pill mute">was {{ 'pass' if base.passed else 'fail' }}</span>{% endif %}</td>
+ <td><ul class="checks">{% for k in case.checks %}<li>{{ '✓' if k.passed else '✗' }} <b>{{ k.type }}</b>{% if k.critical %} (critical){% endif %} · {{ k.detail }}</li>{% endfor %}</ul></td>
+</tr>{% endfor %}
+</table></div>
+
+<footer>Generated by <a href="https://github.com/affifariza04/evalgate">evalgate</a> · system prompt {{ cmp.base.system_sha }} → {{ cmp.cand.system_sha }}</footer>
+</div>
+<script>
+document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  const f=b.dataset.f;
+  document.querySelectorAll('#cases tr[data-pass]').forEach(r=>{
+    r.style.display = f==='all' || (f==='fail' && r.dataset.pass==='0') || (f==='flip' && r.dataset.flip==='1') ? '' : 'none';
+  });
+}));
+</script>
+</body>
+</html>

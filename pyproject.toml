@@ -1,0 +1,36 @@
+[project]
+name = "evalgate"
+version = "0.1.0"
+description = "Regression tests for LLM prompts: YAML eval suites, rule + LLM-judge graders, paired statistics and a CI gate with HTML reports."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "pydantic>=2.14.4",
+    "pyyaml>=6.0.4",
+    "typer>=0.29.2",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=1"]
+
+[project.scripts]
+evalgate = "evalgate.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
+
+[tool.ruff]
+line-length = 140
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["B008"]  # typer declares CLI options as argument defaults

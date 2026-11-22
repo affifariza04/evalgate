@@ -1,0 +1,28 @@
+name: evalgate
+description: Run an evalgate suite and fail the job when the candidate regresses against a baseline run.
+inputs:
+  suite:
+    description: Path to the suite YAML
+    required: true
+  baseline:
+    description: Baseline run JSON (e.g. committed from main)
+    required: true
+  system:
+    description: System prompt file to evaluate (relative to the suite)
+    required: false
+    default: ""
+  report:
+    description: Where to write the HTML report
+    required: false
+    default: evalgate-report.html
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+    - shell: bash
+      run: |
+        set -euo pipefail
+        extra=()
+        if [ -n "${{ inputs.system }}" ]; then extra=(--system "${{ inputs.system }}"); fi
+        uvx --from "${{ github.action_path }}" evalgate run "${{ inputs.suite }}" -o evalgate-candidate.json "${extra[@]}"
+        uvx --from "${{ github.action_path }}" evalgate compare "${{ inputs.suite }}" "${{ inputs.baseline }}" evalgate-candidate.json --html "${{ inputs.report }}"
